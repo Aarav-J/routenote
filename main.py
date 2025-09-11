@@ -7,9 +7,10 @@ import numpy as np
 model = YOLO("../../runs/detect/train9/weights/best.pt")
 img_path = "./corec/4.png"
 raw = cv2.imread(img_path)
+# img = preprocess.preprocess_wall(raw)
 img = raw
 
-results = model.predict(img, conf=0.5, iou=0.3, save=True, verbose=False)
+results = model.predict(img, conf=0.5, iou=0.3, save=False, verbose=False)
 
 r = results[0]                       
 names = model.model.names          
@@ -29,20 +30,7 @@ detections = []
 #         "class_id": int(cls),
 #         "class_name": names[int(cls)]
 #     })
-def groups_by_hsv(detections, threshold=15): 
-    groups = []
-    for d in detections: 
-        h,s,v = d["hsv"]
-        matched = False
-        for g in groups: 
-            gh, gs, gv = g["hsv"]
-            if abs(gh - h) < threshold and abs(gs - s) < threshold and abs(gv - v) < threshold: 
-                g["members"].append(d)
-                matched = True
-                break
-        if not matched: 
-            groups.append({"hsv": (h,s,v), "members":[d]})
-    return groups
+
 
 for box, conf, cls in zip(r.boxes.xyxy.cpu().numpy(), r.boxes.conf.cpu().numpy(), r.boxes.cls.cpu().numpy()):
     x1,y1,x2,y2 = map(int, box)
@@ -70,10 +58,10 @@ if len(detections) > 0:
     # Normalize HSV values for clustering
     # H is in [0,180], S and V are in [0,255] in OpenCV
     normalized_hsv = np.zeros_like(hsv_values, dtype=float)
-    normalized_hsv[:, 0] = hsv_values[:, 0] / 180.0  # H component
-    normalized_hsv[:, 1] = hsv_values[:, 1] / 255.0  # S component
-    normalized_hsv[:, 2] = hsv_values[:, 2] / 255.0  # V component
-    
+    normalized_hsv[:, 0] = hsv_values[:, 0] / 180.0
+    normalized_hsv[:, 1] = hsv_values[:, 1] / 255.0
+    normalized_hsv[:, 2] = hsv_values[:, 2] / 255.0
+
     # Weight hue more heavily than saturation and value
     normalized_hsv[:, 0] *= 2.0
     
@@ -81,9 +69,9 @@ if len(detections) > 0:
     
     # Agglomerative clustering with distance_threshold
     clustering = AgglomerativeClustering(
-        distance_threshold=0.3,  # Higher threshold for normalized HSV space
+        distance_threshold=0.45,  
         n_clusters=None,
-        linkage='ward',  # Ward linkage tends to create more balanced clusters
+        linkage='ward',  
         metric='euclidean'
     )
     labels = clustering.fit_predict(normalized_hsv)
@@ -117,31 +105,112 @@ for index, group in groups.items():
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         cv2.putText(img, label, (x1, y1-6), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
-# Create a small legend showing each cluster's representative color and sample
-legend_width = 250
-legend_img = np.ones((len(groups) * 30 + 20, legend_width, 3), dtype=np.uint8) * 255
+# Create an enhanced legend with actual colors, HSV values, and matching bounding box colors
+def create_enhanced_legend(groups, cluster_colors, img_width=300):
+    # Sort clusters by size (largest first) for the legend
+    sorted_clusters = sorted(groups.items(), key=lambda x: len(x[1]), reverse=True)
+    
+    # Calculate height based on number of clusters
+    row_height = 50
+    padding = 10
+    legend_height = len(sorted_clusters) * row_height + 2 * padding
+    legend_img = np.ones((legend_height, img_width, 3), dtype=np.uint8) * 255
+    
+    y_pos = padding
+    for i, (index, group) in enumerate(sorted_clusters):
+        # Get the bounding box color used in visualization
+        bbox_color = cluster_colors[index]
+        
+        # Calculate average HSV for this cluster
+        hsv_values = np.array([d["hsv"] for d in group])
+        avg_h = int(np.mean(hsv_values[:, 0]))
+        avg_s = int(np.mean(hsv_values[:, 1]))
+        avg_v = int(np.mean(hsv_values[:, 2]))
+        
+        # Create a rectangle with the actual average color
+        actual_color = cv2.cvtColor(
+            np.uint8([[[avg_h, avg_s, avg_v]]]),
+            cv2.COLOR_HSV2BGR
+        )[0][0].astype(int)
+        
+        # Draw the sample color swatch (actual color from HSV)
+        cv2.rectangle(
+            legend_img,
+            (10, y_pos),
+            (60, y_pos + 30),
+            (int(actual_color[0]), int(actual_color[1]), int(actual_color[2])),
+            -1
+        )
+        
+        # Draw the bounding box color swatch (matches what's shown on image)
+        cv2.rectangle(
+            legend_img,
+            (70, y_pos),
+            (100, y_pos + 30),
+            bbox_color,
+            -1
+        )
+        
+        # Add border to swatches for clarity
+        cv2.rectangle(legend_img, (10, y_pos), (60, y_pos + 30), (0, 0, 0), 1)
+        cv2.rectangle(legend_img, (70, y_pos), (100, y_pos + 30), (0, 0, 0), 1)
+        
+        # Add text information
+        text = f"Cluster {index}: {len(group)} holds"
+        cv2.putText(
+            legend_img,
+            text,
+            (110, y_pos + 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            1
+        )
+        
+        # Add HSV values
+        hsv_text = f"HSV: ({avg_h}, {avg_s}, {avg_v})"
+        cv2.putText(
+            legend_img,
+            hsv_text,
+            (110, y_pos + 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (0, 0, 0),
+            1
+        )
+        
+        y_pos += row_height
+    
+    # Add a title and explanation
+    title_img = np.ones((40, img_width, 3), dtype=np.uint8) * 255
+    cv2.putText(
+        title_img,
+        "Legend - Color Clusters",
+        (10, 20),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.6,
+        (0, 0, 0),
+        1
+    )
+    cv2.putText(
+        title_img,
+        "Actual Color | Box Color",
+        (10, 35),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 0, 0),
+        1
+    )
+    
+    # Combine title and legend
+    full_legend = np.vstack([title_img, legend_img])
+    
+    return full_legend
 
-# Sort clusters by size (largest first) for the legend
-sorted_clusters = sorted(groups.items(), key=lambda x: len(x[1]), reverse=True)
-
-for i, (index, group) in enumerate(sorted_clusters):
-    color = cluster_colors[index]
-    
-    # Draw cluster color
-    cv2.rectangle(legend_img, (10, i*30+10), (40, i*30+30), color, -1)
-    
-    # Draw text with cluster number and size
-    cv2.putText(legend_img, f'Cluster {index}: {len(group)} holds', 
-                (50, i*30+25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
-    
-    # Show most common color name in group
-    if len(group) > 0:
-        color_names = [d.get("color_name", "unknown") for d in group]
-        most_common = max(set(color_names), key=color_names.count) if color_names else "unknown"
-        if most_common != "unknown":
-            cv2.putText(legend_img, f'({most_common})', 
-                        (170, i*30+25), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (80,80,80), 1)
+# Create the enhanced legend
+legend_img = create_enhanced_legend(groups, cluster_colors, img_width=300)
 
 # Save both the annotated image and the legend
-cv2.imwrite("backtohsv.jpg", img)
-cv2.imwrite("backtohsv_legend.jpg", legend_img)
+name = "backtoog"
+cv2.imwrite(f"{name}.jpg", img)
+cv2.imwrite(f"{name}_legend.jpg", legend_img)
