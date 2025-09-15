@@ -2,10 +2,13 @@
 
 import { useState, useRef, ChangeEvent } from "react";
 import Image from "next/image";
+import ClimbingImageAnalyzer from "./components/ClimbingImageAnalyzer";
+import { AnalysisResult } from "./utils/imageProcessing";
 
 export default function Home() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [processedImage, setProcessedImage] = useState<string | null>(null);
+  const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null);
   const [legendImage, setLegendImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,53 +29,110 @@ export default function Home() {
     const reader = new FileReader();
     reader.onload = (e) => {
       setSelectedImage(e.target?.result as string);
-      setProcessedImage(null); // Reset any previously processed image
+      
+      // Create an object URL for the file (for the analyzer component)
+      if (imageObjectUrl) {
+        URL.revokeObjectURL(imageObjectUrl); // Clean up previous object URL
+      }
+      setImageObjectUrl(URL.createObjectURL(file));
+      
+      // Reset previous analysis
+      setAnalysisData(null);
+      setLegendImage(null);
     };
     reader.readAsDataURL(file);
   };
 
+  // const handleUpload = async () => {
+  //   if (!selectedImage) {
+  //     setError('Please select an image first');
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setError(null);
+
+  //   try {
+  //     // Create a form to send the image to the backend
+  //     const formData = new FormData();
+  //     const file = fileInputRef.current?.files?.[0];
+      
+  //     if (!file) {
+  //       setError('No file selected');
+  //       setIsLoading(false);
+  //       return;
+  //     }
+      
+  //     formData.append('image', file);
+      
+  //     const response = await fetch('/api/process-image', {
+  //       method: 'POST',
+  //       body: formData,
+  //     });
+      
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.error || 'Failed to process image');
+  //     }
+      
+  //     const data = await response.json();
+  //     setProcessedImage(data.processedImageUrl);
+  //     setLegendImage(data.legendImageUrl);
+  //     setIsLoading(false);
+  //   } catch (err) {
+  //     setError('Failed to process the image. Please try again.');
+  //     setIsLoading(false);
+  //   }
+  // };
   const handleUpload = async () => {
-    if (!selectedImage) {
-      setError('Please select an image first');
+  if (!selectedImage) {
+    setError('Please select an image first');
+    return;
+  }
+
+  setIsLoading(true);
+  setError(null);
+
+  try {
+    // Create a form to send the image to the backend
+    const formData = new FormData();
+    const file = fileInputRef.current?.files?.[0];
+    
+    if (!file) {
+      setError('No file selected');
+      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Create a form to send the image to the backend
-      const formData = new FormData();
-      const file = fileInputRef.current?.files?.[0];
-      
-      if (!file) {
-        setError('No file selected');
-        setIsLoading(false);
-        return;
-      }
-      
-      formData.append('image', file);
-      
-      const response = await fetch('/api/process-image', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process image');
-      }
-      
-      const data = await response.json();
-      setProcessedImage(data.processedImageUrl);
-      setLegendImage(data.legendImageUrl);
-      setIsLoading(false);
-    } catch (err) {
-      setError('Failed to process the image. Please try again.');
-      setIsLoading(false);
+    
+    formData.append('file', file); // FastAPI typically uses 'file' as the form field name
+    
+    const response = await fetch('http://localhost:8000/api/analyze', {
+      method: 'POST',
+      body: formData,
+      // No need to set Content-Type header as the browser will set it correctly with boundary for FormData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to process image');
     }
-  };
-
+    
+    // Parse the analysis data
+    const data = await response.json();
+    setAnalysisData(data);
+    
+    // If the API returns a legendImage URL
+    if (data.legendImageUrl) {
+      setLegendImage(data.legendImageUrl);
+    }
+    
+    setIsLoading(false);
+  } catch (err) {
+    console.error('Error processing image:', err);
+    setError('Failed to process the image. Please try again.');
+    setIsLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
@@ -161,24 +221,17 @@ export default function Home() {
             </div>
           </div>
           
-          {processedImage && (
+          {analysisData && imageObjectUrl && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
               
               <div className="space-y-8">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Processed Image</h3>
-                  <div className="relative w-full">
-                    <img 
-                      src={processedImage}
-                      alt="Processed climbing wall with color clusters" 
-                      className="rounded-lg object-contain w-full max-h-[600px] mx-auto"
-                    />
-                  </div>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    Climbing holds are grouped by color similarity and marked with their cluster index
-                  </p>
-                </div>
+                {/* Use our new component for image analysis */}
+                <ClimbingImageAnalyzer 
+                  originalImage={imageObjectUrl} 
+                  analysisData={analysisData} 
+                  isLoading={isLoading} 
+                />
                 
                 {legendImage && (
                   <div>
@@ -210,7 +263,11 @@ export default function Home() {
                   <button
                     onClick={() => {
                       setSelectedImage(null);
-                      setProcessedImage(null);
+                      setImageObjectUrl(prev => {
+                        if (prev) URL.revokeObjectURL(prev);
+                        return null;
+                      });
+                      setAnalysisData(null);
                       setLegendImage(null);
                       if (fileInputRef.current) {
                         fileInputRef.current.value = '';
