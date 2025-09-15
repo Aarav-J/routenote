@@ -133,6 +133,12 @@ export default function Home() {
     setIsLoading(false);
   }
 };
+  // Save notes to localStorage
+  const handleSaveNotes = (notes: Record<string, string>) => {
+    console.log('Saving notes:', notes);
+    localStorage.setItem('climbingWallNotes', JSON.stringify(notes));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
@@ -230,7 +236,8 @@ export default function Home() {
                 <ClimbingImageAnalyzer 
                   originalImage={imageObjectUrl} 
                   analysisData={analysisData} 
-                  isLoading={isLoading} 
+                  isLoading={isLoading}
+                  onSaveNotes={handleSaveNotes}
                 />
                 
                 {legendImage && (
@@ -249,15 +256,7 @@ export default function Home() {
                   </div>
                 )}
                 
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Analysis Summary</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    The image has been processed to identify climbing holds and group them by color similarity.
-                    Each color cluster represents holds that are likely to be the same color, making it easier to
-                    identify routes. The legend shows the actual average color of holds in each cluster and how many 
-                    holds belong to that group.
-                  </p>
-                </div>
+                
                 
                 <div className="flex justify-center">
                   <button
