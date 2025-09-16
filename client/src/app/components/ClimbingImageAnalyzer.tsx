@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnalysisResult, BoundingBox, Cluster, drawBoundingBoxes, ensureHoldId, isDarkColor, isPointInBox } from "../utils/imageProcessing";
 import HoldNoteModal from "./HoldNoteModal";
+import ClusterDetailView from "./ClusterDetailView";
 
 interface ClimbingImageProps {
   originalImage: string;
@@ -25,6 +26,10 @@ export default function ClimbingImageAnalyzer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // State for cluster detail view
+  const [showClusterDetail, setShowClusterDetail] = useState<boolean>(false);
+  const [detailClusterId, setDetailClusterId] = useState<number | null>(null);
   
   // Effect to draw bounding boxes when data or selected holds change
   useEffect(() => {
@@ -59,7 +64,12 @@ export default function ClimbingImageAnalyzer({
   
   // Handle cluster selection toggle
   const handleClusterClick = (clusterId: number) => {
-    setSelectedCluster(selectedCluster === clusterId ? null : clusterId);
+    // Open cluster detail view instead of just selecting
+    setDetailClusterId(clusterId);
+    setShowClusterDetail(true);
+    
+    // Also update the selected cluster in the main view
+    setSelectedCluster(clusterId);
     setSelectedHold(null); // Clear selected hold when changing clusters
   };
   
@@ -145,6 +155,41 @@ export default function ClimbingImageAnalyzer({
 
   return (
     <div className="space-y-8">
+      {/* Show cluster detail view when a cluster is selected for detail */}
+      {showClusterDetail && detailClusterId !== null && analysisData && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-7xl">
+            <ClusterDetailView
+              originalImage={originalImage}
+              analysisData={analysisData}
+              clusterId={detailClusterId}
+              onClose={() => {
+                setShowClusterDetail(false);
+                // Redraw the main canvas after returning from detail view
+                setTimeout(() => {
+                  if (imageLoaded && analysisData) {
+                    drawBoundingBoxes(
+                      canvasRef.current, 
+                      imageRef.current, 
+                      analysisData, 
+                      selectedCluster,
+                      selectedHold,
+                      true
+                    );
+                  }
+                }, 100);
+              }}
+              onSaveNotes={(updatedNotes) => {
+                const newNotes = {...holdNotes, ...updatedNotes};
+                setHoldNotes(newNotes);
+                if (onSaveNotes) onSaveNotes(newNotes);
+              }}
+              existingNotes={holdNotes}
+            />
+          </div>
+        </div>
+      )}
+    
       <div>
         <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Analyzed Image</h3>
         <div ref={containerRef} className="relative w-full mx-auto" style={{ maxWidth: '100%', textAlign: 'center' }}>
@@ -202,6 +247,9 @@ export default function ClimbingImageAnalyzer({
       {analysisData && analysisData.clusters && analysisData.clusters.length > 0 && (
         <div>
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Color Clusters</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            Click on a cluster to open the detailed view for adding notes to holds
+          </p>
           <div className="flex flex-wrap gap-2 mt-3">
             {analysisData.clusters.map((cluster: Cluster) => (
               <button
@@ -221,6 +269,17 @@ export default function ClimbingImageAnalyzer({
                 <span className="ml-2 bg-white bg-opacity-30 dark:bg-black dark:bg-opacity-30 text-xs rounded-full px-2">
                   {cluster.count}
                 </span>
+                
+                {/* Show note count if any holds in this cluster have notes */}
+                {Object.entries(holdNotes).filter(([holdId]) => {
+                  return cluster.items.some(item => ensureHoldId(item).id === holdId);
+                }).length > 0 && (
+                  <span className="ml-1 text-yellow-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                  </span>
+                )}
               </button>
             ))}
             {selectedCluster !== null && (

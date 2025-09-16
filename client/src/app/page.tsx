@@ -143,7 +143,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">ClimbColor Analyzer</h1>
+          <h1 className="text-4xl font-bold mb-2">RouteNote</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Upload climbing wall images to detect and analyze hold colors
           </p>
@@ -283,11 +283,7 @@ export default function Home() {
         </div>
       </div>
       
-      <footer className="mt-12 py-6 border-t border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-          ClimbColor Analyzer &copy; {new Date().getFullYear()}
-        </div>
-      </footer>
+    
     </div>
   );
 }
