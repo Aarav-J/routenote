@@ -1,7 +1,9 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useEffect, useRef, useState } from "react";
-import { AnalysisResult, BoundingBox, Cluster, drawBoundingBoxes, ensureHoldId, isDarkColor, isPointInBox } from "../utils/imageProcessing";
+import { AnalysisResult, BoundingBox, drawBoundingBoxes, ensureHoldId, isDarkColor, isPointInBox } from "../utils/imageProcessing";
 import HoldNoteModal from "./HoldNoteModal";
 
 interface ClusterDetailViewProps {
@@ -155,50 +157,54 @@ export default function ClusterDetailView({
   }
 
   const [r, g, b] = currentCluster.rgb_color;
-  const clusterColorStyle = `rgb(${r}, ${g}, ${b})`;
+  const headerTextColor = isDarkColor(currentCluster.rgb_color) ? '#ffffff' : '#0f1820';
+  const headerBackground = `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.95), rgba(${r}, ${g}, ${b}, 0.55))`;
   
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_92%,_black_8%)] shadow-[0_26px_80px_rgba(5,8,14,0.7)]">
       {/* Header with cluster info and close button */}
-      <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700" 
-           style={{ backgroundColor: clusterColorStyle, color: isDarkColor(currentCluster.rgb_color) ? 'white' : 'black' }}>
+      <div
+        className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5"
+        style={{ background: headerBackground, color: headerTextColor }}
+      >
         <div>
-          <h2 className="text-xl font-bold">Cluster {clusterId}</h2>
-          <p className="text-sm opacity-90">
+          <p className="text-xs font-semibold uppercase tracking-[0.36em]">Cluster {clusterId}</p>
+          <h2 className="mt-2 text-2xl font-semibold leading-tight">Color signature</h2>
+          <p className="mt-2 text-sm opacity-85">
             {currentCluster.count} holds
-            {clusterHoldNotes.length > 0 && ` • ${clusterHoldNotes.length} with notes`}
+            {clusterHoldNotes.length > 0 && ` • ${clusterHoldNotes.length} noted`}
           </p>
         </div>
         <button 
           onClick={onClose}
-          className="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/10 text-current transition hover:bg-white/20"
           aria-label="Close"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+      <div className="grid grid-cols-1 gap-8 px-6 pb-6 pt-7 lg:grid-cols-2">
         {/* Left column - Image with holds */}
         <div className="flex flex-col">
-          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Cluster View
-            <span className="ml-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-lg font-semibold text-white/90">Cluster view</h3>
+            <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--foreground-muted)]">
               {currentCluster.count} holds
             </span>
-          </h3>
+          </div>
           
-          <div className="relative w-full border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+          <div className="relative mt-4 w-full overflow-hidden rounded-3xl border border-[var(--border)] bg-black/25">
             {/* The main image */}
             <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
               <img 
                 ref={imageRef}
                 src={originalImage}
                 alt={`Climbing wall cluster ${clusterId}`}
-                className="w-full h-auto max-h-[70vh] object-contain"
+                className="w-full max-h-[70vh] rounded-3xl border border-white/10 object-contain"
                 style={{ display: 'block' }}
                 onLoad={() => setImageLoaded(true)}
               />
@@ -206,14 +212,14 @@ export default function ClusterDetailView({
               {/* Canvas overlay for bounding boxes */}
               <canvas
                 ref={canvasRef}
-                className="absolute top-0 left-0 cursor-pointer w-full h-full"
+                className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-3xl"
                 onClick={handleCanvasClick}
               />
             </div>
           </div>
           
-          <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            Click on any hold to select it. Click again to edit notes.
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-[var(--foreground-muted)]">
+            Click once to select a hold. Click again to open the note editor.
           </div>
           
           {/* Mobile-only buttons for better UX on small screens */}
@@ -221,10 +227,10 @@ export default function ClusterDetailView({
             <button
               onClick={() => selectedHold && setShowNoteModal(true)}
               disabled={!selectedHold}
-              className={`px-4 py-2 rounded-lg flex items-center justify-center
+              className={`flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition
                         ${!selectedHold 
-                          ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                          ? 'cursor-not-allowed border border-white/10 text-white/30' 
+                          : 'border border-[var(--primary)]/50 bg-[var(--primary)] text-white shadow-[0_10px_24px_rgba(197,24,241,0.35)] hover:bg-[var(--primary-strong)]'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -236,57 +242,58 @@ export default function ClusterDetailView({
 
         {/* Right column - Notes interface */}
         <div className="flex flex-col">
-          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Hold Notes
-            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-              ({clusterHoldNotes.length} / {currentCluster.count})
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h3 className="text-lg font-semibold text-white/90">Hold notes</h3>
+            <span className="text-sm text-[var(--foreground-muted)]">
+              {clusterHoldNotes.length} of {currentCluster.count} holds documented
             </span>
-          </h3>
+          </div>
 
           {/* Selected hold info */}
           {selectedHold && (
-            <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-lg">
-              <div className="flex justify-between items-center">
-                <h4 className="font-medium text-blue-600 dark:text-blue-400">Selected Hold</h4>
+            <div className="mb-5 rounded-3xl border border-[var(--primary)]/35 bg-[var(--primary-soft)]/40 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.38em] text-[var(--primary)]">Selected hold</h4>
                 <button
                   onClick={() => setShowNoteModal(true)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(197,24,241,0.35)] transition hover:bg-[var(--primary-strong)]"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                  {currentNote ? "Edit Note" : "Add Note"}
+                  {currentNote ? "Edit note" : "Add note"}
                 </button>
               </div>
               
               {currentNote ? (
-                <div className="mt-3 bg-white dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600">
-                  <p className="text-sm whitespace-pre-wrap">{currentNote}</p>
+                <div className="mt-4 rounded-2xl border border-white/15 bg-black/30 p-4 text-sm text-white/90">
+                  <p className="whitespace-pre-wrap leading-relaxed">{currentNote}</p>
                 </div>
               ) : (
-                <div className="mt-3 text-sm text-gray-500 italic">
-                  No notes yet. Click the button above to add a note.
+                <div className="mt-4 text-sm italic text-[var(--foreground-muted)]">
+                  No notes yet. Click the button above to capture beta or setting tips.
                 </div>
               )}
             </div>
           )}
 
           {/* List of notes for this cluster */}
-          <div className="flex-grow overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="flex-grow overflow-y-auto rounded-3xl border border-[var(--border)] bg-black/20">
             {clusterHoldNotes.length > 0 ? (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-white/5">
                 {clusterHoldNotes.map(([holdId, note]) => (
                   <div 
                     key={holdId} 
-                    className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors
-                              ${selectedHold === holdId ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
+                    className={`cursor-pointer px-5 py-4 transition-colors hover:bg-white/5 ${
+                      selectedHold === holdId ? 'bg-[var(--primary-soft)]/30' : ''
+                    }`}
                     onClick={() => {
                       setSelectedHold(holdId);
                       setCurrentNote(note);
                     }}
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="font-medium text-sm mb-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-sm font-semibold text-white">
                         Hold #{currentCluster.items.findIndex(
                           item => ensureHoldId(item).id === holdId
                         ) + 1}
@@ -298,24 +305,21 @@ export default function ClusterDetailView({
                           setCurrentNote(note);
                           setShowNoteModal(true);
                         }}
-                        className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--primary)]/60 hover:text-[var(--primary)]"
                       >
                         Edit
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap line-clamp-2">
-                      {note}
-                    </p>
+                    <p className="mt-2 line-clamp-3 text-sm text-[var(--foreground-muted)] whitespace-pre-wrap">{note}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex h-40 flex-col items-center justify-center text-[var(--foreground-muted)]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mb-3 h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p className="text-center">No notes added yet</p>
-                <p className="text-center text-sm">Click on a hold to add notes</p>
+                <p className="text-center text-sm">No notes added yet. Select a hold to start documenting.</p>
               </div>
             )}
           </div>

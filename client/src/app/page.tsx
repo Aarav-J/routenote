@@ -1,7 +1,8 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useRef, ChangeEvent } from "react";
-import Image from "next/image";
 import ClimbingImageAnalyzer from "./components/ClimbingImageAnalyzer";
 import { AnalysisResult } from "./utils/imageProcessing";
 
@@ -140,125 +141,174 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">RouteNote</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Upload climbing wall images to detect and analyze hold colors
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="pointer-events-none absolute -top-48 left-1/2 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(197,24,241,0.22)_0%,_rgba(15,24,32,0.15)_65%,_rgba(15,24,32,0)_100%)] blur-3xl" />
+
+      <main className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-14 sm:px-10 lg:py-20">
+        <header className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--primary)] shadow-[0_0_12px_rgba(197,24,241,0.7)]" />
+            Route Intelligence
+          </div>
+          <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+            Transform raw wall photos into actionable climbing insights
+          </h1>
+          <p className="mt-4 text-lg text-[var(--foreground-muted)]">
+            Upload a climbing wall image, cluster holds by color, and capture precise notes for setting new problems or refining beta.
           </p>
         </header>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4">Upload Image</h2>
-              
-              <div className="flex flex-col items-center">
-                <div 
-                  className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {selectedImage ? (
-                    <div className="relative w-full max-w-md mx-auto aspect-video">
-                      <img 
-                        src={selectedImage} 
-                        alt="Selected climbing wall" 
-                        className="rounded-lg object-cover w-full h-full"
-                      />
+        <section className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-start">
+          <div className="rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_90%,_black_10%)]/95 p-8 shadow-[var(--shadow)] backdrop-blur-xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Upload a climbing wall</h2>
+                <p className="mt-2 text-sm text-[var(--foreground-muted)]">
+                  We support JPG, PNG, or WEBP images up to 10 MB.
+                </p>
+              </div>
+              {selectedImage && (
+                <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs font-medium text-[var(--primary)]">
+                  Ready
+                </span>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <div
+                className="group relative flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/10 bg-[var(--background-raised-soft)]/70 px-6 py-10 text-center transition-all duration-300 hover:border-[var(--primary)]/55 hover:bg-[var(--background-raised-soft)]"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {selectedImage ? (
+                  <div className="relative w-full max-w-md">
+                    <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <img
+                      src={selectedImage}
+                      alt="Selected climbing wall"
+                      className="relative z-10 w-full rounded-2xl border border-white/5 object-cover shadow-[0_18px_45px_rgba(5,8,16,0.45)]"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between rounded-b-2xl bg-black/45 px-4 py-2 text-xs text-white">
+                      <span className="font-medium uppercase tracking-wide">Preview</span>
+                      <span className="text-[var(--foreground-muted)]">Click to replace</span>
                     </div>
-                  ) : (
-                    <div className="py-8">
-                      <svg 
-                        className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)] shadow-[0_0_0_1px_rgba(197,24,241,0.1)]">
+                      <svg
+                        className="h-9 w-9"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16.5l4.2-4.2a2 2 0 012.828 0L16 17.5m-1.8-2.8l1.7-1.7a2 2 0 012.828 0L20 15m-7.5-6.5h.01M6 19.5h12a2 2 0 002-2V6.5a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
                         />
                       </svg>
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Click to select or drag and drop a climbing wall image
-                      </p>
-                      <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                        PNG, JPG, WEBP up to 10MB
-                      </p>
                     </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                  />
-                </div>
-                
-                {error && (
-                  <p className="text-red-500 mt-2 text-sm">{error}</p>
+                    <div className="space-y-1">
+                      <p className="text-base font-medium text-white">Click to select or drop a file</p>
+                      <p className="text-sm text-[var(--foreground-muted)]">We&apos;ll render a crisp preview and keep your file local.</p>
+                    </div>
+                  </div>
                 )}
-                
-                <button
-                  onClick={handleUpload}
-                  disabled={!selectedImage || isLoading}
-                  className={`mt-4 px-6 py-2 rounded-full font-medium text-white 
-                    ${!selectedImage || isLoading 
-                      ? 'bg-gray-400 dark:bg-gray-700 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'}
-                    transition-colors duration-300`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : 'Analyze Image'}
-                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                />
               </div>
+
+              {error && (
+                <p className="mt-3 text-sm font-medium text-rose-400">{error}</p>
+              )}
+
+              <button
+                onClick={handleUpload}
+                disabled={!selectedImage || isLoading}
+                className="group relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(197,24,241,0.35)] transition duration-300 hover:bg-[var(--primary-strong)] disabled:pointer-events-none disabled:bg-white/8 disabled:text-white/35 disabled:shadow-none"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <svg
+                      className="h-5 w-5 animate-spin text-white/90"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V1.5C5.2 1.5 1.5 5.2 1.5 12H4z" />
+                    </svg>
+                    Processing image…
+                  </span>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M7 3h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7a4 4 0 014-4zm5 8h.01M12 16h.01m3-5h.01m-6 0h.01" />
+                    </svg>
+                    Analyze Image
+                  </>
+                )}
+              </button>
             </div>
           </div>
-          
-          {analysisData && imageObjectUrl && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
-              
-              <div className="space-y-8">
-                {/* Use our new component for image analysis */}
-                <ClimbingImageAnalyzer 
-                  originalImage={imageObjectUrl} 
-                  analysisData={analysisData} 
+
+          {analysisData && imageObjectUrl ? (
+            <div className="rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_92%,_black_8%)]/95 p-8 shadow-[var(--shadow)] backdrop-blur-xl">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Analysis results</h2>
+                  <p className="mt-2 text-sm text-[var(--foreground-muted)]">
+                    Explore detected clusters, annotate individual holds, and export your notes.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
+                  Beta Lab
+                </span>
+              </div>
+
+              <div className="mt-8 space-y-10">
+                <ClimbingImageAnalyzer
+                  originalImage={imageObjectUrl}
+                  analysisData={analysisData}
                   isLoading={isLoading}
                   onSaveNotes={handleSaveNotes}
                 />
-                
+
                 {legendImage && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Color Clusters</h3>
-                    <div className="relative w-full">
-                      <img 
+                  <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-lg font-medium text-white/90">Cluster legend</h3>
+                      <span className="text-xs uppercase tracking-wide text-[var(--foreground-muted)]">
+                        Auto-generated from your upload
+                      </span>
+                    </div>
+                    <div className="relative mt-4 w-full overflow-hidden rounded-xl border border-white/5 bg-[var(--background-raised-soft)]">
+                      <img
                         src={legendImage}
-                        alt="Color cluster legend" 
-                        className="rounded-lg object-contain w-full max-h-[400px] mx-auto bg-white dark:bg-gray-700 p-2"
+                        alt="Color cluster legend"
+                        className="max-h-[420px] w-full rounded-xl object-contain"
                       />
                     </div>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      Legend showing the different color clusters and the number of holds in each
+                    <p className="mt-3 text-xs text-[var(--foreground-muted)]">
+                      Each swatch maps to a detected color cluster with its hold count for quick reference while setting new problems.
                     </p>
                   </div>
                 )}
-                
-                
-                
-                <div className="flex justify-center">
+
+                <div className="flex flex-wrap justify-center gap-3">
                   <button
                     onClick={() => {
                       setSelectedImage(null);
@@ -272,18 +322,30 @@ export default function Home() {
                         fileInputRef.current.value = '';
                       }
                     }}
-                    className="px-6 py-2 rounded-full font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors duration-300"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
                   >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 19.5l3-3m0 0l-3-3m3 3H15a4.5 4.5 0 000-9h-1.5" />
+                    </svg>
                     Analyze Another Image
                   </button>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="hidden rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-sm text-[var(--foreground-muted)] lg:flex lg:flex-col lg:items-center lg:justify-center">
+              <div className="rounded-full bg-[var(--primary-soft)] px-4 py-1 text-xs font-semibold text-[var(--primary)]">No analysis yet</div>
+              <p className="mt-4 max-w-sm text-balance">Upload a wall photo to unlock clustering, dynamic overlays, and rich hold notes.</p>
+            </div>
           )}
-        </div>
-      </div>
-      
-    
+        </section>
+      </main>
     </div>
   );
 }
