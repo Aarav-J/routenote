@@ -1,3 +1,30 @@
 ./datasets
 node_modules/
 client/node_modules/
+
+# Build artifacts
+.next/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Next.js build output
+client/.next/
+client/out/
+
+# Static files (generated)
+static/output/
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

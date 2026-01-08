@@ -161,7 +161,7 @@ export default function ClusterDetailView({
   const headerBackground = `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.95), rgba(${r}, ${g}, ${b}, 0.55))`;
   
   return (
-    <div className="flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_92%,_black_8%)] shadow-[0_26px_80px_rgba(5,8,14,0.7)]">
+    <div className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card-background)] shadow-[var(--shadow-primary-strong)]">
       {/* Header with cluster info and close button */}
       <div
         className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5"
@@ -197,14 +197,14 @@ export default function ClusterDetailView({
             </span>
           </div>
           
-          <div className="relative mt-4 w-full overflow-hidden rounded-3xl border border-[var(--border)] bg-black/25">
+          <div className="relative mt-4 w-full overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card-background)]">
             {/* The main image */}
             <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
               <img 
                 ref={imageRef}
                 src={originalImage}
                 alt={`Climbing wall cluster ${clusterId}`}
-                className="w-full max-h-[70vh] rounded-3xl border border-white/10 object-contain"
+                className="w-full max-h-[70vh] rounded-2xl border border-[var(--border-subtle)] object-contain"
                 style={{ display: 'block' }}
                 onLoad={() => setImageLoaded(true)}
               />
@@ -218,7 +218,7 @@ export default function ClusterDetailView({
             </div>
           </div>
           
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-[var(--foreground-muted)]">
+          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-raised)] p-4 text-sm text-[var(--foreground-muted)]">
             Click once to select a hold. Click again to open the note editor.
           </div>
           
@@ -229,8 +229,8 @@ export default function ClusterDetailView({
               disabled={!selectedHold}
               className={`flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition
                         ${!selectedHold 
-                          ? 'cursor-not-allowed border border-white/10 text-white/30' 
-                          : 'border border-[var(--primary)]/50 bg-[var(--primary)] text-white shadow-[0_10px_24px_rgba(197,24,241,0.35)] hover:bg-[var(--primary-strong)]'}`}
+                          ? 'cursor-not-allowed border border-[var(--border)] text-[var(--foreground-subtle)]' 
+                          : 'border border-[var(--border-strong)] bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] text-white shadow-[var(--shadow-primary)] hover:shadow-[var(--shadow-primary-strong)]'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -251,12 +251,12 @@ export default function ClusterDetailView({
 
           {/* Selected hold info */}
           {selectedHold && (
-            <div className="mb-5 rounded-3xl border border-[var(--primary)]/35 bg-[var(--primary-soft)]/40 p-5">
+            <div className="mb-5 rounded-2xl border border-[var(--border-strong)] bg-[var(--primary-softer)] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h4 className="text-xs font-semibold uppercase tracking-[0.38em] text-[var(--primary)]">Selected hold</h4>
                 <button
                   onClick={() => setShowNoteModal(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(197,24,241,0.35)] transition hover:bg-[var(--primary-strong)]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -266,7 +266,7 @@ export default function ClusterDetailView({
               </div>
               
               {currentNote ? (
-                <div className="mt-4 rounded-2xl border border-white/15 bg-black/30 p-4 text-sm text-white/90">
+                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-raised)] p-4 text-sm text-white/90">
                   <p className="whitespace-pre-wrap leading-relaxed">{currentNote}</p>
                 </div>
               ) : (
@@ -278,14 +278,14 @@ export default function ClusterDetailView({
           )}
 
           {/* List of notes for this cluster */}
-          <div className="flex-grow overflow-y-auto rounded-3xl border border-[var(--border)] bg-black/20">
+          <div className="flex-grow overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--background-raised)]">
             {clusterHoldNotes.length > 0 ? (
               <div className="divide-y divide-white/5">
                 {clusterHoldNotes.map(([holdId, note]) => (
                   <div 
                     key={holdId} 
-                    className={`cursor-pointer px-5 py-4 transition-colors hover:bg-white/5 ${
-                      selectedHold === holdId ? 'bg-[var(--primary-soft)]/30' : ''
+                    className={`cursor-pointer px-5 py-4 transition-colors hover:bg-[var(--background-raised-soft)] ${
+                      selectedHold === holdId ? 'bg-[var(--primary-softer)]' : ''
                     }`}
                     onClick={() => {
                       setSelectedHold(holdId);
@@ -305,7 +305,7 @@ export default function ClusterDetailView({
                           setCurrentNote(note);
                           setShowNoteModal(true);
                         }}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--primary)]/60 hover:text-[var(--primary)]"
+                        className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
                       >
                         Edit
                       </button>

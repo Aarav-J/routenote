@@ -1,7 +1,8 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 import cv2
 import numpy as np
@@ -11,11 +12,14 @@ from ultralytics import YOLO
 import colordetector as cd
 from sklearn.cluster import AgglomerativeClustering
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import time
+import uuid
 
 OUTPUT_DIR = "static/output"
+ROUTES_DIR = "static/routes"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(ROUTES_DIR, exist_ok=True)
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -30,6 +34,19 @@ app.add_middleware(
 
 # Load the YOLO model
 model = YOLO("../../runs/detect/train9/weights/best.pt")
+
+# Route storage models (for future backend storage)
+class RouteMetadata(BaseModel):
+    name: str
+    description: Optional[str] = None
+    tags: List[str] = []
+
+class RouteCreate(BaseModel):
+    metadata: RouteMetadata
+    image_url: str
+    original_filename: str
+    analysis_data: Dict[str, Any]
+    notes: Dict[str, str] = {}
 
 @app.post("/api/analyze")
 async def analyze_image(file: UploadFile = File(...)):
@@ -178,6 +195,140 @@ async def analyze_image(file: UploadFile = File(...)):
             status_code=500,
             content={"error": f"Processing failed: {str(e)}"}
         )
+
+# Route storage endpoints (optional - currently using localStorage on client)
+# These endpoints are ready for future backend storage implementation
+
+@app.get("/api/routes")
+async def get_routes():
+    """
+    Get all saved routes.
+    Currently returns empty list as we're using localStorage-first approach.
+    Can be extended to use file-based or database storage.
+    """
+    # TODO: Implement backend storage (file-based JSON or database)
+    routes = []
+    routes_file = os.path.join(ROUTES_DIR, "routes.json")
+    if os.path.exists(routes_file):
+        try:
+            with open(routes_file, 'r') as f:
+                routes = json.load(f)
+        except Exception as e:
+            print(f"Error reading routes: {e}")
+    return {"routes": routes}
+
+@app.get("/api/routes/{route_id}")
+async def get_route(route_id: str):
+    """
+    Get a single route by ID.
+    """
+    routes_file = os.path.join(ROUTES_DIR, "routes.json")
+    if os.path.exists(routes_file):
+        try:
+            with open(routes_file, 'r') as f:
+                routes = json.load(f)
+            route = next((r for r in routes if r.get("id") == route_id), None)
+            if route:
+                return route
+        except Exception as e:
+            print(f"Error reading routes: {e}")
+    raise HTTPException(status_code=404, detail="Route not found")
+
+@app.post("/api/routes")
+async def create_route(route: RouteCreate):
+    """
+    Create a new route.
+    """
+    route_id = str(uuid.uuid4())
+    route_data = {
+        "id": route_id,
+        "name": route.metadata.name,
+        "description": route.metadata.description,
+        "tags": route.metadata.tags,
+        "created_at": int(time.time()),
+        "image_url": route.image_url,
+        "original_filename": route.original_filename,
+        "analysis_data": route.analysis_data,
+        "notes": route.notes
+    }
+    
+    routes_file = os.path.join(ROUTES_DIR, "routes.json")
+    routes = []
+    if os.path.exists(routes_file):
+        try:
+            with open(routes_file, 'r') as f:
+                routes = json.load(f)
+        except Exception as e:
+            print(f"Error reading routes: {e}")
+    
+    routes.append(route_data)
+    
+    try:
+        with open(routes_file, 'w') as f:
+            json.dump(routes, f, indent=2)
+    except Exception as e:
+        print(f"Error saving route: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save route")
+    
+    return route_data
+
+@app.put("/api/routes/{route_id}")
+async def update_route(route_id: str, updates: Dict[str, Any]):
+    """
+    Update an existing route.
+    """
+    routes_file = os.path.join(ROUTES_DIR, "routes.json")
+    if not os.path.exists(routes_file):
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    try:
+        with open(routes_file, 'r') as f:
+            routes = json.load(f)
+        
+        route_index = next((i for i, r in enumerate(routes) if r.get("id") == route_id), None)
+        if route_index is None:
+            raise HTTPException(status_code=404, detail="Route not found")
+        
+        routes[route_index].update(updates)
+        
+        with open(routes_file, 'w') as f:
+            json.dump(routes, f, indent=2)
+        
+        return routes[route_index]
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating route: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update route")
+
+@app.delete("/api/routes/{route_id}")
+async def delete_route(route_id: str):
+    """
+    Delete a route.
+    """
+    routes_file = os.path.join(ROUTES_DIR, "routes.json")
+    if not os.path.exists(routes_file):
+        raise HTTPException(status_code=404, detail="Route not found")
+    
+    try:
+        with open(routes_file, 'r') as f:
+            routes = json.load(f)
+        
+        original_length = len(routes)
+        routes = [r for r in routes if r.get("id") != route_id]
+        
+        if len(routes) == original_length:
+            raise HTTPException(status_code=404, detail="Route not found")
+        
+        with open(routes_file, 'w') as f:
+            json.dump(routes, f, indent=2)
+        
+        return {"success": True, "message": "Route deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting route: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete route")
 
 @app.get("/")
 async def root():

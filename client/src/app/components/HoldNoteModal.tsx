@@ -72,10 +72,10 @@ export default function HoldNoteModal({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-10 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-10 backdrop-blur-sm">
       <div
         ref={modalRef}
-        className="w-full max-w-md rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_92%,_black_8%)] p-7 text-white shadow-[0_20px_60px_rgba(5,8,14,0.65)]"
+        className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-7 text-white shadow-[var(--shadow-primary-strong)]"
       >
         <h3 className="text-xl font-semibold text-white">
           {title}
@@ -85,20 +85,20 @@ export default function HoldNoteModal({
           ref={textareaRef}
           defaultValue={note}
           placeholder="Enter notes about this hold (texture, difficulty, tips, etc.)"
-          className="mt-4 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white placeholder:text-[var(--foreground-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/60"
+            className="mt-4 w-full rounded-lg border border-[var(--border)] bg-[var(--background-raised)] px-4 py-3 text-sm text-white placeholder:text-[var(--foreground-subtle)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-soft)]"
           rows={5}
         />
         
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2 text-sm font-semibold text-white transition hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-5 py-2 text-sm font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(197,24,241,0.35)] transition hover:bg-[var(--primary-strong)]"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-5 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
           >
             Save Note
           </button>
