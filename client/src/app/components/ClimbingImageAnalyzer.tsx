@@ -159,7 +159,7 @@ export default function ClimbingImageAnalyzer({
     <div className="space-y-12">
       {/* Show cluster detail view when a cluster is selected for detail */}
       {showClusterDetail && detailClusterId !== null && analysisData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-10 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-4 py-10 backdrop-blur-sm">
           <div className="w-full max-w-6xl">
             <ClusterDetailView
               originalImage={originalImage}
@@ -201,7 +201,7 @@ export default function ClimbingImageAnalyzer({
         </div>
         <div
           ref={containerRef}
-          className="relative mx-auto w-full rounded-3xl border border-[var(--border)] bg-black/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+          className="relative mx-auto w-full rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-4 shadow-[var(--shadow)]"
           style={{ maxWidth: '100%', textAlign: 'center' }}
         >
           {/* The main image */}
@@ -210,7 +210,7 @@ export default function ClimbingImageAnalyzer({
               ref={imageRef}
               src={originalImage}
               alt="Climbing wall with hold detection"
-              className="max-h-[600px] max-w-full rounded-2xl border border-white/5"
+              className="max-h-[600px] max-w-full rounded-2xl border border-[var(--border-subtle)]"
               style={{ display: 'block' }}
               onLoad={() => setImageLoaded(true)}
             />
@@ -268,10 +268,10 @@ export default function ClimbingImageAnalyzer({
               <button
                 key={cluster.cluster_id}
                 onClick={() => handleClusterClick(cluster.cluster_id)}
-                className={`group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-[0_12px_25px_rgba(5,8,14,0.35)] transition ${
+                className={`group inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-[var(--shadow)] transition ${
                   selectedCluster === cluster.cluster_id
-                    ? 'ring-2 ring-offset-2 ring-[var(--primary)] ring-offset-black/60'
-                    : 'ring-1 ring-inset ring-white/15'
+                    ? 'ring-2 ring-offset-2 ring-[var(--primary)] ring-offset-[var(--background)]'
+                    : 'ring-1 ring-inset ring-[var(--border-subtle)]'
                 }`}
                 style={{
                   backgroundColor: `rgb(${cluster.rgb_color[0]}, ${cluster.rgb_color[1]}, ${cluster.rgb_color[2]})`,
@@ -298,7 +298,7 @@ export default function ClimbingImageAnalyzer({
             {selectedCluster !== null && (
               <button
                 onClick={() => setSelectedCluster(null)}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-4 py-2 text-sm font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
               >
                 Show All
               </button>
@@ -307,7 +307,7 @@ export default function ClimbingImageAnalyzer({
           
           {/* Selected cluster details */}
           {selectedCluster !== null && (
-            <div className="mt-5 rounded-3xl border border-[var(--border)] bg-white/5 p-5">
+            <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-5">
               <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--foreground-muted)]">
                 Cluster {selectedCluster} Summary
               </h4>
@@ -318,7 +318,7 @@ export default function ClimbingImageAnalyzer({
                 Avg HSV: {analysisData.clusters.find(c => c.cluster_id === selectedCluster)?.avg_hsv.map(v => Math.round(v)).join(', ')}
               </p>
               
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-[var(--foreground-muted)]">
+              <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-raised)] p-4 text-sm text-[var(--foreground-muted)]">
                 <p className="font-medium text-white">Tips</p>
                 <p className="mt-2">• Click any hold to select it and capture context-specific beta.</p>
                 <p className="mt-1">• Holds with notes display the ✎ indicator inside their cluster chip.</p>
@@ -328,12 +328,12 @@ export default function ClimbingImageAnalyzer({
           
           {/* Note taking interface for selected hold */}
           {selectedHold && (
-            <div className="mt-6 rounded-3xl border border-[var(--primary)]/35 bg-[var(--primary-soft)]/45 p-5">
+            <div className="mt-6 rounded-2xl border border-[var(--border-strong)] bg-[var(--primary-softer)] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h4 className="text-xs font-semibold uppercase tracking-[0.38em] text-[var(--primary)]">Selected Hold</h4>
                 <button
                   onClick={() => setShowNoteModal(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(197,24,241,0.35)] transition hover:bg-[var(--primary-strong)]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -343,7 +343,7 @@ export default function ClimbingImageAnalyzer({
               </div>
               
               {currentNote && (
-                <div className="mt-4 rounded-2xl border border-white/15 bg-black/30 p-4 text-sm text-white/90">
+                <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--background-raised)] p-4 text-sm text-white/90">
                   <p className="whitespace-pre-wrap leading-relaxed">{currentNote}</p>
                 </div>
               )}
@@ -351,7 +351,7 @@ export default function ClimbingImageAnalyzer({
               <div className="mt-4 flex justify-end">
                 <button 
                   onClick={() => setSelectedHold(null)}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-medium text-white transition hover:border-[var(--primary)]/60 hover:text-[var(--primary)]"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-4 py-2 text-sm font-medium text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
                 >
                   Close
                 </button>
@@ -361,7 +361,7 @@ export default function ClimbingImageAnalyzer({
           
           {/* Summary of all notes */}
           {Object.keys(holdNotes).length > 0 && (
-            <div className="mt-8 rounded-3xl border border-[var(--border)] bg-white/5 p-5">
+            <div className="mt-8 rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h4 className="text-base font-semibold text-white">
                   Hold notes <span className="text-sm font-medium text-[var(--foreground-muted)]">({Object.keys(holdNotes).length})</span>
@@ -385,7 +385,7 @@ export default function ClimbingImageAnalyzer({
                   });
                   
                   return (
-                    <div key={holdId} className="rounded-2xl border border-white/10 bg-black/35 p-4">
+                    <div key={holdId} className="rounded-xl border border-[var(--border)] bg-[var(--background-raised)] p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <span className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
@@ -400,7 +400,7 @@ export default function ClimbingImageAnalyzer({
                             setSelectedHold(holdId);
                             setCurrentNote(note);
                           }}
-                          className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--primary)]/60 hover:text-[var(--primary)]"
+                          className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-3 py-1 text-xs font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
                         >
                           Edit
                         </button>
@@ -426,7 +426,7 @@ export default function ClimbingImageAnalyzer({
                       linkElement.click();
                       document.body.removeChild(linkElement);
                     }}
-                    className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)]/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-[var(--accent)]"
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-5 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
                   >
                     Export Notes
                   </button>

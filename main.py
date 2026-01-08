@@ -211,6 +211,6 @@ def create_enhanced_legend(groups, cluster_colors, img_width=300):
 legend_img = create_enhanced_legend(groups, cluster_colors, img_width=300)
 
 # Save both the annotated image and the legend
-name = "backtoog"
+name = "secondtest"
 cv2.imwrite(f"{name}.jpg", img)
 cv2.imwrite(f"{name}_legend.jpg", legend_img)

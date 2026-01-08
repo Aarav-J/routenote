@@ -3,16 +3,24 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState, useRef, ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import ClimbingImageAnalyzer from "./components/ClimbingImageAnalyzer";
+import RouteForm from "./components/RouteForm";
 import { AnalysisResult } from "./utils/imageProcessing";
+import { saveRoute } from "./utils/storage";
+import { RouteMetadata } from "./utils/routeTypes";
 
 export default function Home() {
+  const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
+  const [originalFilename, setOriginalFilename] = useState<string>("");
   const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null);
   const [legendImage, setLegendImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSaveForm, setShowSaveForm] = useState<boolean>(false);
+  const [notes, setNotes] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -25,6 +33,8 @@ export default function Home() {
       setError('Please select an image file');
       return;
     }
+
+    setOriginalFilename(file.name);
 
     // Create a preview of the selected image
     const reader = new FileReader();
@@ -40,6 +50,8 @@ export default function Home() {
       // Reset previous analysis
       setAnalysisData(null);
       setLegendImage(null);
+      setNotes({});
+      setShowSaveForm(false);
     };
     reader.readAsDataURL(file);
   };
@@ -134,20 +146,43 @@ export default function Home() {
     setIsLoading(false);
   }
 };
-  // Save notes to localStorage
-  const handleSaveNotes = (notes: Record<string, string>) => {
-    console.log('Saving notes:', notes);
-    localStorage.setItem('climbingWallNotes', JSON.stringify(notes));
+  // Save notes to state
+  const handleSaveNotes = (newNotes: Record<string, string>) => {
+    setNotes(newNotes);
+  };
+
+  // Handle saving route with metadata
+  const handleSaveRoute = async (metadata: RouteMetadata) => {
+    if (!analysisData || !imageObjectUrl || !originalFilename) {
+      setError('Missing data to save route');
+      return;
+    }
+
+    try {
+      const route = await saveRoute(
+        imageObjectUrl,
+        originalFilename,
+        analysisData,
+        notes,
+        metadata
+      );
+      
+      // Navigate to the routes page
+      router.push(`/routes/${route.id}`);
+    } catch (err) {
+      console.error('Error saving route:', err);
+      setError('Failed to save route. Please try again.');
+    }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(197,24,241,0.22)_0%,_rgba(15,24,32,0.15)_65%,_rgba(15,24,32,0)_100%)] blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden pt-20">
+      <div className="pointer-events-none absolute -top-48 left-1/2 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(147,51,234,0.25)_0%,_rgba(168,85,247,0.15)_65%,_transparent_100%)] blur-3xl" />
 
       <main className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-14 sm:px-10 lg:py-20">
         <header className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
-            <span className="h-2 w-2 rounded-full bg-[var(--primary)] shadow-[0_0_12px_rgba(197,24,241,0.7)]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card-background)] px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--primary)] shadow-[var(--shadow-primary)]" />
             Route Intelligence
           </div>
           <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
@@ -159,7 +194,7 @@ export default function Home() {
         </header>
 
         <section className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-start">
-          <div className="rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_90%,_black_10%)]/95 p-8 shadow-[var(--shadow)] backdrop-blur-xl">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-8 shadow-[var(--shadow)]">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-white">Upload a climbing wall</h2>
@@ -232,7 +267,7 @@ export default function Home() {
               <button
                 onClick={handleUpload}
                 disabled={!selectedImage || isLoading}
-                className="group relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(197,24,241,0.35)] transition duration-300 hover:bg-[var(--primary-strong)] disabled:pointer-events-none disabled:bg-white/8 disabled:text-white/35 disabled:shadow-none"
+                className="group relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition duration-300 hover:shadow-[var(--shadow-primary-strong)] disabled:pointer-events-none disabled:bg-[var(--background-raised-soft)] disabled:text-[var(--foreground-subtle)] disabled:shadow-none"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
@@ -266,17 +301,28 @@ export default function Home() {
           </div>
 
           {analysisData && imageObjectUrl ? (
-            <div className="rounded-3xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--background-raised)_92%,_black_8%)]/95 p-8 shadow-[var(--shadow)] backdrop-blur-xl">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-8 shadow-[var(--shadow)]">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">Analysis results</h2>
                   <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-                    Explore detected clusters, annotate individual holds, and export your notes.
+                    Explore detected clusters, annotate individual holds, and save your route.
                   </p>
                 </div>
-                <span className="rounded-full bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
-                  Beta Lab
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowSaveForm(true)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Route
+                  </button>
+                  <span className="rounded-full border border-[var(--border)] bg-[var(--background-raised)] px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
+                    Beta Lab
+                  </span>
+                </div>
               </div>
 
               <div className="mt-8 space-y-10">
@@ -316,13 +362,16 @@ export default function Home() {
                         if (prev) URL.revokeObjectURL(prev);
                         return null;
                       });
+                      setOriginalFilename("");
                       setAnalysisData(null);
                       setLegendImage(null);
+                      setNotes({});
+                      setShowSaveForm(false);
                       if (fileInputRef.current) {
                         fileInputRef.current.value = '';
                       }
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-[var(--primary)]/50 hover:text-[var(--primary)]"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-5 py-2.5 text-sm font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -339,13 +388,23 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="hidden rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-sm text-[var(--foreground-muted)] lg:flex lg:flex-col lg:items-center lg:justify-center">
-              <div className="rounded-full bg-[var(--primary-soft)] px-4 py-1 text-xs font-semibold text-[var(--primary)]">No analysis yet</div>
+            <div className="hidden rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card-background)] p-10 text-center text-sm text-[var(--foreground-muted)] lg:flex lg:flex-col lg:items-center lg:justify-center">
+              <div className="rounded-full border border-[var(--border)] bg-[var(--primary-soft)] px-4 py-1 text-xs font-semibold text-[var(--primary-light)]">No analysis yet</div>
               <p className="mt-4 max-w-sm text-balance">Upload a wall photo to unlock clustering, dynamic overlays, and rich hold notes.</p>
             </div>
           )}
         </section>
       </main>
+
+      {/* Save Route Form Modal */}
+      {showSaveForm && (
+        <RouteForm
+          isOpen={showSaveForm}
+          onClose={() => setShowSaveForm(false)}
+          onSubmit={handleSaveRoute}
+          defaultName={`Route ${new Date().toLocaleDateString()}`}
+        />
+      )}
     </div>
   );
 }
