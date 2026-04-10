@@ -5,63 +5,59 @@ import { usePathname } from "next/navigation";
 
 export default function Navigation() {
   const pathname = usePathname();
-  
   const navItems = [
-    { href: '/', label: 'Analysis', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    )},
-    { href: '/routes', label: 'Routes', icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-    )},
+    { href: "/", label: "Workspace" },
+    { href: "/routes", label: "Routes" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[var(--background-raised)]/95 backdrop-blur-xl shadow-[var(--shadow)]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo/Brand */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-lg bg-[var(--primary)] opacity-20 blur-md group-hover:opacity-30 transition-opacity" />
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--primary-light)] shadow-[var(--shadow-primary)]">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
+    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-[#262627] bg-[#0e0e0f]/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-xl font-bold tracking-tighter text-[#cc97ff]">
+            RouteNote
+          </Link>
+          <div className="hidden items-center gap-6 md:flex">
+            {navItems.map((item) => {
+              const isActive =
+                pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`pb-1 text-sm font-semibold tracking-tight transition-colors duration-200 ${
+                    isActive
+                      ? "border-b-2 border-[#cc97ff] text-[#cc97ff]"
+                      : "text-[#adaaab] hover:text-[#cc97ff]"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-white">RouteNote</h1>
-            <p className="text-xs text-[var(--foreground-muted)]">Climbing Intelligence</p>
-          </div>
-        </Link>
+        </div>
 
-        {/* Navigation Links */}
         <div className="flex items-center gap-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`group relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-[var(--primary-soft)] text-[var(--primary-light)] shadow-[0_0_0_1px_var(--border-strong)]'
-                    : 'text-[var(--foreground-muted)] hover:bg-[var(--background-raised-soft)] hover:text-white'
-                }`}
-              >
-                <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                  {item.icon}
-                </span>
-                <span className="hidden sm:inline">{item.label}</span>
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)]" />
-                )}
-              </Link>
-            );
-          })}
+          <button
+            type="button"
+            className="rounded-md p-2 text-[#adaaab] transition-colors hover:text-[#cc97ff]"
+            aria-label="Notifications"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="rounded-md p-2 text-[#adaaab] transition-colors hover:text-[#cc97ff]"
+            aria-label="Settings"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.3 2.8l.3 1.8a7.8 7.8 0 012 .8l1.6-1a1 1 0 011.3.2l1.4 1.4a1 1 0 01.2 1.3l-1 1.6c.4.6.7 1.3.8 2l1.8.3a1 1 0 01.8 1v2a1 1 0 01-.8 1l-1.8.3a7.8 7.8 0 01-.8 2l1 1.6a1 1 0 01-.2 1.3l-1.4 1.4a1 1 0 01-1.3.2l-1.6-1a7.8 7.8 0 01-2 .8l-.3 1.8a1 1 0 01-1 .8h-2a1 1 0 01-1-.8l-.3-1.8a7.8 7.8 0 01-2-.8l-1.6 1a1 1 0 01-1.3-.2L2.8 18a1 1 0 01-.2-1.3l1-1.6a7.8 7.8 0 01-.8-2L1 12.8a1 1 0 01-.8-1v-2a1 1 0 01.8-1l1.8-.3a7.8 7.8 0 01.8-2l-1-1.6A1 1 0 012.8 3l1.4-1.4a1 1 0 011.3-.2l1.6 1a7.8 7.8 0 012-.8l.3-1.8a1 1 0 011-.8h2a1 1 0 011 .8zM12 15.5A3.5 3.5 0 1012 8a3.5 3.5 0 000 7.5z" />
+            </svg>
+          </button>
+          <div className="ml-1 h-8 w-8 rounded-full bg-[#262627]" />
         </div>
       </div>
     </nav>

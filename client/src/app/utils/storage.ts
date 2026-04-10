@@ -4,6 +4,7 @@
 
 import { Route, RouteMetadata } from './routeTypes';
 import { AnalysisResult } from './imageProcessing';
+import { deleteImage, putImage } from "./imageStore";
 
 const STORAGE_KEY = 'climbing_routes';
 const NOTES_KEY = 'climbingWallNotes'; // Legacy key for backward compatibility
@@ -87,6 +88,19 @@ export async function saveRoute(
   metadata: RouteMetadata
 ): Promise<Route> {
   const routes = getRoutes();
+
+  // Store large image payloads in IndexedDB to avoid localStorage quota limits.
+  let storedImageUrl = imageUrl;
+  let imageKey: string | undefined;
+  try {
+    if (imageUrl.startsWith("data:image/")) {
+      imageKey = await putImage(imageUrl);
+      storedImageUrl = `idb:${imageKey}`;
+    }
+  } catch (e) {
+    // If IndexedDB is unavailable, fall back to whatever we were given.
+    console.warn("IndexedDB image save failed; falling back to inline imageUrl", e);
+  }
   
   const route: Route = {
     id: generateRouteId(),
@@ -94,10 +108,12 @@ export async function saveRoute(
     description: metadata.description,
     tags: metadata.tags || [],
     createdAt: Date.now(),
-    imageUrl,
+    imageUrl: storedImageUrl,
+    imageKey,
     originalFilename,
     analysisData,
     notes,
+    clusterGrades: {},
     thumbnail: await createThumbnail(imageUrl)
   };
   
@@ -112,7 +128,7 @@ export async function saveRoute(
  */
 export async function updateRoute(
   id: string,
-  updates: Partial<RouteMetadata> & { notes?: Record<string, string> }
+  updates: Partial<RouteMetadata> & { notes?: Record<string, string>; clusterGrades?: Record<string, string> }
 ): Promise<Route | null> {
   const routes = getRoutes();
   const index = routes.findIndex(r => r.id === id);
@@ -125,12 +141,24 @@ export async function updateRoute(
     name: updates.name ?? route.name,
     description: updates.description ?? route.description,
     tags: updates.tags ?? route.tags,
-    notes: updates.notes ?? route.notes
+    notes: updates.notes ?? route.notes,
+    clusterGrades: updates.clusterGrades ?? route.clusterGrades
   };
   
   // Regenerate thumbnail if image URL changed
   if (updates.imageUrl && updates.imageUrl !== route.imageUrl) {
-    updatedRoute.imageUrl = updates.imageUrl;
+    let storedImageUrl = updates.imageUrl;
+    let imageKey: string | undefined;
+    try {
+      if (updates.imageUrl.startsWith("data:image/")) {
+        imageKey = await putImage(updates.imageUrl);
+        storedImageUrl = `idb:${imageKey}`;
+      }
+    } catch (e) {
+      console.warn("IndexedDB image update failed; falling back to inline imageUrl", e);
+    }
+    updatedRoute.imageUrl = storedImageUrl;
+    updatedRoute.imageKey = imageKey;
     updatedRoute.thumbnail = await createThumbnail(updates.imageUrl);
   }
   
@@ -145,11 +173,18 @@ export async function updateRoute(
  */
 export function deleteRoute(id: string): boolean {
   const routes = getRoutes();
+  const routeToDelete = routes.find(r => r.id === id);
   const filtered = routes.filter(r => r.id !== id);
   
   if (filtered.length === routes.length) return false;
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+
+  // Best-effort cleanup of IndexedDB image payload.
+  const key = routeToDelete?.imageKey || (routeToDelete?.imageUrl?.startsWith("idb:") ? routeToDelete.imageUrl.slice(4) : undefined);
+  if (key) {
+    deleteImage(key).catch((e) => console.warn("Failed to delete stored image", e));
+  }
   return true;
 }
 

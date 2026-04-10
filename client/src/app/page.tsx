@@ -133,12 +133,28 @@ export default function Home() {
     // Parse the analysis data
     const data = await response.json();
     setAnalysisData(data);
-    
+
     // If the API returns a legendImage URL
     if (data.legendImageUrl) {
       setLegendImage(data.legendImageUrl);
     }
-    
+
+    // Auto-save and redirect to Routes (no scrolling on landing page)
+    const defaultMetadata: RouteMetadata = {
+      name: `Route ${new Date().toLocaleDateString()}`,
+      description: "Auto-saved from analysis",
+      tags: [],
+    };
+
+    const saved = await saveRoute(
+      selectedImage, // persistable data URL (avoid ephemeral object URLs)
+      originalFilename || defaultMetadata.name,
+      data,
+      {}, // notes start empty; user can add them in the route detail view
+      defaultMetadata
+    );
+
+    router.push(`/routes/${saved.id}`);
     setIsLoading(false);
   } catch (err) {
     console.error('Error processing image:', err);
@@ -175,226 +191,200 @@ export default function Home() {
     }
   };
 
+  const resetAnalysisState = () => {
+    setSelectedImage(null);
+    setImageObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setOriginalFilename("");
+    setAnalysisData(null);
+    setLegendImage(null);
+    setNotes({});
+    setShowSaveForm(false);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="relative min-h-screen overflow-hidden pt-20">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(147,51,234,0.25)_0%,_rgba(168,85,247,0.15)_65%,_transparent_100%)] blur-3xl" />
-
-      <main className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-14 sm:px-10 lg:py-20">
-        <header className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card-background)] px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
-            <span className="h-2 w-2 rounded-full bg-[var(--primary)] shadow-[var(--shadow-primary)]" />
-            Route Intelligence
-          </div>
-          <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-            Transform raw wall photos into actionable climbing insights
+    <div className="min-h-screen bg-[#0e0e0f] pt-20 text-white">
+      <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
+        <section className="mb-16 text-center">
+          <h1 className="mb-6 bg-gradient-to-b from-white to-[#adaaab] bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-6xl">
+            Transform raw wall photos into <br className="hidden md:block" /> actionable climbing insights
           </h1>
-          <p className="mt-4 text-lg text-[var(--foreground-muted)]">
-            Upload a climbing wall image, cluster holds by color, and capture precise notes for setting new problems or refining beta.
+          <p className="mx-auto max-w-2xl text-lg text-[#adaaab]">
+            Precision route mapping and texture analysis powered by obsidian intelligence. High-fidelity data for the modern climber.
           </p>
-        </header>
+        </section>
 
-        <section className="mt-14 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-start">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-8 shadow-[var(--shadow)]">
-            <div className="flex items-start justify-between">
+        <section className="mx-auto mb-16 max-w-4xl">
+          <div className="group relative rounded-xl bg-[#131314] p-2 shadow-[0_0_60px_rgba(204,151,255,0.06)]">
+            <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-[#cc97ff]/20 to-[#9c48ea]/20 opacity-20 blur-xl transition duration-500 group-hover:opacity-40" />
+            <div
+              className="relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#484849]/70 bg-[#1a191b] px-6 py-16 text-center transition-all duration-300 hover:border-[#cc97ff]/50 hover:shadow-[0_0_40px_rgba(204,151,255,0.15)] md:py-24"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedImage ? (
+                <div className="w-full max-w-2xl space-y-6">
+                  <img
+                    src={selectedImage}
+                    alt="Selected climbing wall"
+                    className="mx-auto max-h-[460px] w-full rounded-lg border border-[#262627] object-contain"
+                  />
+                  <p className="text-sm text-[#adaaab]">Click anywhere in this panel to replace your image.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#262627] text-[#cc97ff]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16.5l4.2-4.2a2 2 0 012.828 0L16 17.5m-1.8-2.8l1.7-1.7a2 2 0 012.828 0L20 15m-7.5-6.5h.01M6 19.5h12a2 2 0 002-2V6.5a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="mb-2 text-2xl font-medium">Upload &amp; Analyze</h2>
+                  <p className="mb-8 max-w-md text-[#adaaab]">
+                    Drag your wall photo here or click to browse. Supports high-resolution JPG, PNG, and TIFF.
+                  </p>
+                </>
+              )}
+              <button
+                type="button"
+                className="rounded-full bg-gradient-to-r from-[#cc97ff] to-[#9c48ea] px-8 py-3 font-bold text-black transition-all hover:shadow-[0_0_20px_rgba(204,151,255,0.4)] active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                Select Image
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept="image/*"
+              />
+            </div>
+          </div>
+          {error && <p className="mt-4 text-sm font-medium text-rose-400">{error}</p>}
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={handleUpload}
+              disabled={!selectedImage || isLoading}
+              className="inline-flex items-center justify-center rounded-full bg-[#262627] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#2c2c2d] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? "Processing image..." : "Run Analysis"}
+            </button>
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <div className="mb-8 flex items-center justify-between">
+            <h3 className="text-xl font-bold tracking-tight">Recent Analyses</h3>
+            <button className="text-sm font-medium text-[#cc97ff] hover:underline">View all history</button>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+            <div className="overflow-hidden rounded-xl bg-[#131314] transition-colors hover:bg-[#1a191b]">
+              <div className="aspect-[4/3] bg-[#262627]" />
+              <div className="p-4">
+                <div className="mb-1 flex items-start justify-between">
+                  <h4 className="font-bold">The Overhang A2</h4>
+                  <span className="text-xs text-[#adaaab]">V6</span>
+                </div>
+                <span className="text-xs text-[#adaaab]">2 hours ago</span>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-[#131314] transition-colors hover:bg-[#1a191b]">
+              <div className="aspect-[4/3] bg-[#262627]" />
+              <div className="p-4">
+                <div className="mb-1 flex items-start justify-between">
+                  <h4 className="font-bold">Limestone Peak</h4>
+                  <span className="text-xs text-[#adaaab]">5.12a</span>
+                </div>
+                <span className="text-xs text-[#adaaab]">5 hours ago</span>
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-[#131314] transition-colors hover:bg-[#1a191b]">
+              <div className="aspect-[4/3] bg-[#262627]" />
+              <div className="p-4">
+                <div className="mb-1 flex items-start justify-between">
+                  <h4 className="font-bold">Sector Delta</h4>
+                  <span className="text-xs text-[#adaaab]">V4</span>
+                </div>
+                <span className="text-xs text-[#adaaab]">Yesterday</span>
+              </div>
+            </div>
+            <div className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#484849] bg-[#131314]/40 p-4 transition-all hover:border-[#cc97ff]/40">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-[#484849] text-[#adaaab]">+</div>
+              <span className="text-xs font-medium tracking-tight text-[#adaaab]">New Project</span>
+            </div>
+          </div>
+        </section>
+
+        {analysisData && imageObjectUrl && (
+          <section className="rounded-2xl border border-[#262627] bg-[#131314] p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-white">Upload a climbing wall</h2>
-                <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-                  We support JPG, PNG, or WEBP images up to 10 MB.
+                <h2 className="text-2xl font-semibold">Analysis results</h2>
+                <p className="mt-2 text-sm text-[#adaaab]">
+                  Explore detected clusters, annotate individual holds, and save your route.
                 </p>
               </div>
-              {selectedImage && (
-                <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs font-medium text-[var(--primary)]">
-                  Ready
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowSaveForm(true)}
+                  className="rounded-full bg-gradient-to-r from-[#cc97ff] to-[#9c48ea] px-5 py-2 text-sm font-semibold text-black"
+                >
+                  Save Route
+                </button>
+                <button
+                  onClick={resetAnalysisState}
+                  className="rounded-full border border-[#484849] px-5 py-2 text-sm font-semibold text-white hover:border-[#cc97ff]"
+                >
+                  Analyze Another
+                </button>
+              </div>
             </div>
 
-            <div className="mt-6">
-              <div
-                className="group relative flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/10 bg-[var(--background-raised-soft)]/70 px-6 py-10 text-center transition-all duration-300 hover:border-[var(--primary)]/55 hover:bg-[var(--background-raised-soft)]"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {selectedImage ? (
-                  <div className="relative w-full max-w-md">
-                    <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="mt-8 space-y-10">
+              <ClimbingImageAnalyzer
+                originalImage={imageObjectUrl}
+                analysisData={analysisData}
+                isLoading={isLoading}
+                onSaveNotes={handleSaveNotes}
+              />
+
+              {legendImage && (
+                <div className="rounded-xl border border-[#262627] bg-black/20 p-5">
+                  <h3 className="text-lg font-medium text-white/90">Cluster legend</h3>
+                  <div className="relative mt-4 w-full overflow-hidden rounded-xl border border-white/5 bg-[#1a191b]">
                     <img
-                      src={selectedImage}
-                      alt="Selected climbing wall"
-                      className="relative z-10 w-full rounded-2xl border border-white/5 object-cover shadow-[0_18px_45px_rgba(5,8,16,0.45)]"
+                      src={legendImage}
+                      alt="Color cluster legend"
+                      className="max-h-[420px] w-full rounded-xl object-contain"
                     />
-                    <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between rounded-b-2xl bg-black/45 px-4 py-2 text-xs text-white">
-                      <span className="font-medium uppercase tracking-wide">Preview</span>
-                      <span className="text-[var(--foreground-muted)]">Click to replace</span>
-                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)] shadow-[0_0_0_1px_rgba(197,24,241,0.1)]">
-                      <svg
-                        className="h-9 w-9"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M4 16.5l4.2-4.2a2 2 0 012.828 0L16 17.5m-1.8-2.8l1.7-1.7a2 2 0 012.828 0L20 15m-7.5-6.5h.01M6 19.5h12a2 2 0 002-2V6.5a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-base font-medium text-white">Click to select or drop a file</p>
-                      <p className="text-sm text-[var(--foreground-muted)]">We&apos;ll render a crisp preview and keep your file local.</p>
-                    </div>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  accept="image/*"
-                />
-              </div>
-
-              {error && (
-                <p className="mt-3 text-sm font-medium text-rose-400">{error}</p>
+                </div>
               )}
-
-              <button
-                onClick={handleUpload}
-                disabled={!selectedImage || isLoading}
-                className="group relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition duration-300 hover:shadow-[var(--shadow-primary-strong)] disabled:pointer-events-none disabled:bg-[var(--background-raised-soft)] disabled:text-[var(--foreground-subtle)] disabled:shadow-none"
-              >
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="h-5 w-5 animate-spin text-white/90"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle className="opacity-30" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V1.5C5.2 1.5 1.5 5.2 1.5 12H4z" />
-                    </svg>
-                    Processing image…
-                  </span>
-                ) : (
-                  <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7h18M7 3h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7a4 4 0 014-4zm5 8h.01M12 16h.01m3-5h.01m-6 0h.01" />
-                    </svg>
-                    Analyze Image
-                  </>
-                )}
-              </button>
             </div>
-          </div>
-
-          {analysisData && imageObjectUrl ? (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-background)] p-8 shadow-[var(--shadow)]">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-white">Analysis results</h2>
-                  <p className="mt-2 text-sm text-[var(--foreground-muted)]">
-                    Explore detected clusters, annotate individual holds, and save your route.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setShowSaveForm(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition hover:shadow-[var(--shadow-primary-strong)]"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Save Route
-                  </button>
-                  <span className="rounded-full border border-[var(--border)] bg-[var(--background-raised)] px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
-                    Beta Lab
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-8 space-y-10">
-                <ClimbingImageAnalyzer
-                  originalImage={imageObjectUrl}
-                  analysisData={analysisData}
-                  isLoading={isLoading}
-                  onSaveNotes={handleSaveNotes}
-                />
-
-                {legendImage && (
-                  <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="text-lg font-medium text-white/90">Cluster legend</h3>
-                      <span className="text-xs uppercase tracking-wide text-[var(--foreground-muted)]">
-                        Auto-generated from your upload
-                      </span>
-                    </div>
-                    <div className="relative mt-4 w-full overflow-hidden rounded-xl border border-white/5 bg-[var(--background-raised-soft)]">
-                      <img
-                        src={legendImage}
-                        alt="Color cluster legend"
-                        className="max-h-[420px] w-full rounded-xl object-contain"
-                      />
-                    </div>
-                    <p className="mt-3 text-xs text-[var(--foreground-muted)]">
-                      Each swatch maps to a detected color cluster with its hold count for quick reference while setting new problems.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap justify-center gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setImageObjectUrl(prev => {
-                        if (prev) URL.revokeObjectURL(prev);
-                        return null;
-                      });
-                      setOriginalFilename("");
-                      setAnalysisData(null);
-                      setLegendImage(null);
-                      setNotes({});
-                      setShowSaveForm(false);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-background)] px-5 py-2.5 text-sm font-semibold text-white transition hover:border-[var(--primary)] hover:text-[var(--primary-light)]"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.5 19.5l3-3m0 0l-3-3m3 3H15a4.5 4.5 0 000-9h-1.5" />
-                    </svg>
-                    Analyze Another Image
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="hidden rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card-background)] p-10 text-center text-sm text-[var(--foreground-muted)] lg:flex lg:flex-col lg:items-center lg:justify-center">
-              <div className="rounded-full border border-[var(--border)] bg-[var(--primary-soft)] px-4 py-1 text-xs font-semibold text-[var(--primary-light)]">No analysis yet</div>
-              <p className="mt-4 max-w-sm text-balance">Upload a wall photo to unlock clustering, dynamic overlays, and rich hold notes.</p>
-            </div>
-          )}
-        </section>
+          </section>
+        )}
       </main>
+
+      <footer className="border-t border-[#484849]/30 px-6 py-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row">
+          <div className="text-lg font-bold tracking-tight text-[#cc97ff]">RouteNote</div>
+          <div className="flex gap-8 text-sm text-[#adaaab]">
+            <a className="transition-colors hover:text-[#cc97ff]" href="#">Documentation</a>
+            <a className="transition-colors hover:text-[#cc97ff]" href="#">API</a>
+            <a className="transition-colors hover:text-[#cc97ff]" href="#">Privacy</a>
+            <a className="transition-colors hover:text-[#cc97ff]" href="#">Support</a>
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-[#adaaab]/50">© 2024 Obsidian Intelligence Systems</div>
+        </div>
+      </footer>
 
       {/* Save Route Form Modal */}
       {showSaveForm && (

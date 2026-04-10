@@ -11,9 +11,19 @@ export interface Route {
   tags: string[];
   createdAt: number;
   imageUrl: string;
+  /**
+   * If `imageUrl` starts with `idb:` then the remainder is the IndexedDB key.
+   * This avoids blowing past localStorage quotas with large base64 payloads.
+   */
+  imageKey?: string;
   originalFilename: string;
   analysisData: AnalysisResult;
   notes: Record<string, string>;
+  /**
+   * Per-cluster grade assignments (e.g. "V4", "V6").
+   * Keyed by `cluster_id` (stored as string keys for JSON/localStorage).
+   */
+  clusterGrades?: Record<string, string>;
   thumbnail?: string; // Base64 thumbnail for list view
 }
 
